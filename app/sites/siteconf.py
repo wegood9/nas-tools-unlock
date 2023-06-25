@@ -587,11 +587,11 @@ class SiteConf:
     @lru_cache(maxsize=128)
     def __get_site_page_html(url, cookie, ua, render=False, proxy=False):
         chrome = ChromeHelper(headless=True)
-        if render and chrome.get_status():
+        if chrome.get_status():
             # 开渲染
             if chrome.visit(url=url, cookie=cookie, ua=ua, proxy=proxy):
                 # 等待页面加载完成
-                time.sleep(10)
+                time.sleep(15)
                 return chrome.get_html()
         else:
             res = RequestUtils(
