@@ -7,6 +7,7 @@ from functools import lru_cache
 from lxml import etree
 
 from app.helper import ChromeHelper
+from app.helper import ChromeDriverPool
 from app.utils import ExceptionUtils, StringUtils, RequestUtils
 from app.utils.commons import singleton
 from config import Config
@@ -494,6 +495,8 @@ class SiteConf:
         }
     }
 
+    chrome_driver_pool = ChromeDriverPool()
+
     def __init__(self):
         self.init_config()
 
@@ -579,19 +582,19 @@ class SiteConf:
                     ret_attr["peer_count"] = int(peer_count_digit_str) if len(peer_count_digit_str) > 0 else 0
         except Exception as err:
             ExceptionUtils.exception_traceback(err)
-        # 随机休眼后再返回
-        time.sleep(round(random.uniform(1, 5), 1))
+        
+        
         return ret_attr
 
     @staticmethod
     @lru_cache(maxsize=128)
     def __get_site_page_html(url, cookie, ua, render=False, proxy=False):
-        chrome = ChromeHelper(headless=True)
+        chrome = SiteConf().chrome_driver_pool.get_chrome_driver(url)
         if chrome.get_status():
             # 开渲染
-            if chrome.visit(url=url, cookie=cookie, ua=ua, proxy=proxy):
-                # 等待页面加载完成
-                time.sleep(15)
+            if chrome.visit(url=url, cookie=cookie, ua=ua, proxy=proxy, pool=True):
+                # 随机休眼后再返回
+                time.sleep(round(random.uniform(1, 5), 1))
                 return chrome.get_html()
         else:
             res = RequestUtils(
@@ -603,3 +606,6 @@ class SiteConf:
                 res.encoding = res.apparent_encoding
                 return res.text
         return ""
+
+
+

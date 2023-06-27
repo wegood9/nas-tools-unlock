@@ -6,15 +6,42 @@ from threading import Lock
 
 import undetected_chromedriver as uc
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.common.exceptions import TimeoutException
+from urllib.parse import urlparse
 
 import app.helper.cloudflare_helper as CloudflareHelper
 from app.utils import SystemUtils, RequestUtils
 from config import Config
+from app.utils.commons import singleton
 
 lock = Lock()
 
 driver_executable_path = None
 
+@singleton
+class ChromeDriverPool:
+    def __init__(self):
+        self.driver_pool = {}
+    
+    def get_chrome_driver(self, url):
+        domain = urlparse(url).netloc
+        
+        if domain in self.driver_pool:
+            return self.driver_pool[domain]
+        
+        driver = ChromeHelper(headless=True)
+        if driver.get_status():
+            driver.visit(url=url)
+        else:
+            return None
+        self.driver_pool[domain] = driver
+        return driver
+        
+    def delete(self, url):
+        domain = urlparse(url).netloc
+        
+        if domain in self.driver_pool:
+            del self.driver_pool[domain]
 
 class ChromeHelper(object):
     _executable_path = None
@@ -94,7 +121,7 @@ class ChromeHelper(object):
         chrome.set_page_load_timeout(30)
         return chrome
 
-    def visit(self, url, ua=None, cookie=None, timeout=30, proxy=None):
+    def visit(self, url, ua=None, cookie=None, timeout=30, proxy=None, pool=False):
         self._proxy = proxy
         if not self.browser:
             return False
@@ -105,12 +132,17 @@ class ChromeHelper(object):
                 })
             if timeout:
                 self._chrome.implicitly_wait(timeout)
-            self._chrome.get(url)
+            # Selenium needs to request the domain before setting cookies
+            if not pool:
+                self._chrome.get(url)
             if cookie:
                 self._chrome.delete_all_cookies()
                 for cookie in RequestUtils.cookie_parse(cookie, array=True):
                     self._chrome.add_cookie(cookie)
                 self._chrome.get(url)
+            return True
+        # Catch the timeout exception as no error
+        except TimeoutException:
             return True
         except Exception as err:
             print(str(err))
