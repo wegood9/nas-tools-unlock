@@ -248,7 +248,8 @@ class BrushTask(object):
                                              siteid=site_id,
                                              cookie=cookie,
                                              ua=ua,
-                                             proxy=site_proxy):
+                                             proxy=site_proxy,
+                                             render=site_info.get("chrome")):
                     continue
                 # 检查能否添加当前种子，判断是否超过保种体积大小
                 if not self.__is_allow_new_torrent(taskinfo=taskinfo,
@@ -665,7 +666,8 @@ class BrushTask(object):
                          siteid,
                          cookie,
                          ua,
-                         proxy):
+                         proxy,
+                         render = False):
         """
         检查种子是否符合刷流过滤条件
         :param rss_rule: 过滤条件字典
@@ -717,7 +719,8 @@ class BrushTask(object):
             torrent_attr = self.siteconf.check_torrent_attr(torrent_url=torrent_url,
                                                             cookie=cookie,
                                                             ua=ua,
-                                                            proxy=proxy)
+                                                            proxy=proxy,
+                                                            render=render)
             torrent_peer_count = torrent_attr.get("peer_count")
             log.debug("【Brush】%s 解析详情, %s" % (title, torrent_attr))
 

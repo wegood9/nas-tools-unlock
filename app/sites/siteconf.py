@@ -526,7 +526,7 @@ class SiteConf:
                 return v
         return {}
 
-    def check_torrent_attr(self, torrent_url, cookie, ua=None, proxy=False):
+    def check_torrent_attr(self, torrent_url, cookie, ua=None, proxy=False, render=False):
         """
         检验种子是否免费，当前做种人数
         :param torrent_url: 种子的详情页面
@@ -549,7 +549,7 @@ class SiteConf:
         html_text = self.__get_site_page_html(url=torrent_url,
                                               cookie=cookie,
                                               ua=ua,
-                                              render=xpath_strs.get('RENDER'),
+                                              render=render or xpath_strs.get('RENDER'),
                                               proxy=proxy)
         if not html_text:
             return ret_attr
@@ -589,10 +589,9 @@ class SiteConf:
     @staticmethod
     @lru_cache(maxsize=128)
     def __get_site_page_html(url, cookie, ua, render=False, proxy=False):
-        chrome = SiteConf().chrome_driver_pool.get_chrome_driver(url)
-        if chrome.get_status():
-            # 开渲染
-            if chrome.visit(url=url, cookie=cookie, ua=ua, proxy=proxy, pool=True):
+        if render:
+            chrome = SiteConf().chrome_driver_pool.get_chrome_driver(url)
+            if chrome.get_status() and chrome.visit(url=url, cookie=cookie, ua=ua, proxy=proxy, pool=True):
                 # 随机休眼后再返回
                 time.sleep(round(random.uniform(1, 5), 1))
                 return chrome.get_html()
