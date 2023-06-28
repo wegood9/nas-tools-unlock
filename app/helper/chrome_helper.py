@@ -1,6 +1,7 @@
 import json
 import signal
 import os
+import psutil
 import tempfile
 from functools import reduce
 from threading import Lock
@@ -18,6 +19,12 @@ from app.utils.commons import singleton
 lock = Lock()
 
 driver_executable_path = None
+
+def killprocess(pid):
+    childlist = psutil.Process(pid).children(recursive=True)
+    for i in childlist:
+        i.kill()
+    psutil.Process(pid).kill()
 
 @singleton
 class ChromeDriverPool:
@@ -235,7 +242,7 @@ class ChromeHelper(object):
                 self._chrome.service.process.wait(3)
             # chrome 进程
             os.waitpid(self._chrome.browser_pid, 0)
-            os.kill(self._chrome.browser_pid, signal.SIGKILL)
+            killprocess(self._chrome.browser_pid)
         except Exception as e:
             print(str(e))
             pass
