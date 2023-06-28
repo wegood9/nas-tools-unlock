@@ -53,10 +53,56 @@ jobs:
         name: windows
         path: D:/a/nas-tools-unlock/nas-tools-unlock/nas-tools-unlock/package/dist/nas-tools.exe
 
+  Linux-build-amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Init Python 3.10.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10.10'
+
+      - name: Install dependent packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install wheel pyinstaller==5.7.0
+          git clone --depth=1 -b master https://github.com/wegood9/nas-tools-unlock --recurse-submodule
+          cd nas-tools-unlock
+          pip install -r requirements.txt
+          echo ("NASTOOL_CONFIG=/home/runner/work/nas-tools-unlock/nas-tools-unlock/nas-tools-unlock/config/config.yaml") >> $env:GITHUB_ENV
+          echo $env:NASTOOL_CONFIG
+        shell: pwsh
+
+      - name: Package through pyinstaller
+        run: |
+          cd nas-tools-unlock
+          pwd
+          ls -all
+          cp ./package/rely/hook-cn2an.py /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/PyInstaller/hooks/
+          cp ./package/rely/hook-zhconv.py /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/PyInstaller/hooks/
+          cp ./package/rely/hook-iso639.py /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/PyInstaller/hooks/
+          cp ./third_party.txt ./package/
+          cp ./package/rely/template.jinja2 /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/setuptools/_vendor/pyparsing/diagram/
+          cp -r ./web/. /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/web/
+          cp -r ./config/. /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/config/
+          cp -r ./scripts/. /opt/hostedtoolcache/Python/3.10.10/x64/lib/python3.10/site-packages/scripts/
+          cd package
+          pwd
+          ls -all
+          pyinstaller nas-tools.spec
+          mv /home/runner/work/nas-tools-unlock/nas-tools-unlock/nas-tools-unlock/package/dist/nas-tools /home/runner/work/nas-tools-unlock/nas-tools-unlock/nas-tools-unlock/package/dist/nas-tools-unlock.linux.amd64
+          ls -all /home/runner/work/nas-tools-unlock/nas-tools-unlock/nas-tools-unlock/package/dist
+        shell: pwsh
+
+      - name: Upload linux file
+        uses: actions/upload-artifact@v3
+        with:
+          name: linux-amd64
+          path: /home/runner/work/nas-tools-unlock/nas-tools-unlock/nas-tools-unlock/package/dist/nas-tools-unlock.linux.amd64
+
   Create-release_Send-message:
     permissions: write-all
     runs-on: ubuntu-latest
-    needs: [Windows-build]
+    needs: [Windows-build, Linux-build-amd64]
     steps:
     - uses: actions/checkout@v2
 

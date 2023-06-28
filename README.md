@@ -26,10 +26,20 @@ NAS媒体库管理工具。
 
 此版本在官方版本的基础上，免除了PT站点认证，并恢复了磁力下载/索引器等功能。
 
+## 更新&维护说明：
 
+个人自用维护版，以最后一个公开的免认证版为基础，添加或修改了以下功能：
+
++ 支持自定义 Transmission RPC 路径，设置地址形如 https://example.com/custom/tr/rpc 即可
++ 站点的浏览器仿真（undectected-chromedriver）设置在刷流解析种子时也将应用（对解析速度影响极大，建议执行周期设置为15分钟以上，高速刷流请勿开启仿真）
++ 刷流时浏览器仿真使用浏览器池以提高速度，并保持浏览器不关闭（可能消耗大量内存）
++ 连接BT客户端遇到网络错误时自动重试（5次）
+
+已知bug：
++ 程序退出时浏览器不关闭
 
 ## 安装
-### 1、Docker
+### 1、Docker (**Deprecated**)
 ```
 docker pull challengerv/nas-tools-unlock:latest
 ```
@@ -38,9 +48,9 @@ docker pull challengerv/nas-tools-unlock:latest
 如无法连接Github，注意不要开启自动更新开关(NASTOOL_AUTO_UPDATE=false)，将NASTOOL_CN_UPDATE设置为true可使用国内源加速安装依赖。
 
 ### 2、本地运行
-python3.10版本，需要预安装cython，如发现缺少依赖包需额外安装：
+由于认证模块未开源仅提供二进制文件，故只支持Python3.10版本，需要预安装cython，如发现缺少依赖包需额外安装：
 ```
-git clone -b master https://github.com/YaoShuwei/nas-tools-unlock --recurse-submodule 
+git clone -b master https://github.com/wegood9/nas-tools-unlock --recurse-submodule 
 python3 -m pip install -r requirements.txt
 export NASTOOL_CONFIG="/xxx/config/config.yaml"
 nohup python3 run.py & 
@@ -49,9 +59,9 @@ nohup python3 run.py &
 ### 3、可执行文件
 下载打包好的执行文件运行即可，会自动生成配置文件目录：
 
-https://github.com/YaoShuwei/nas-tools-unlock/releases
+```见GitHub Action```
 
-### 4、群晖套件
+### 4、群晖套件 (**Deprecated**)
 添加矿神群晖SPK套件源直接安装：
 
 https://spk.imnks.com/
