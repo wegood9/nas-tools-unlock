@@ -11,6 +11,7 @@ import log
 from app.downloader import Downloader
 from app.filter import Filter
 from app.helper import DbHelper, RssHelper
+from app.helper import ChromeDriverPool
 from app.media.meta import MetaInfo
 from app.message import Message
 from app.sites import Sites, SiteConf
@@ -248,7 +249,8 @@ class BrushTask(object):
                                              siteid=site_id,
                                              cookie=cookie,
                                              ua=ua,
-                                             proxy=site_proxy):
+                                             proxy=site_proxy,
+                                             render=site_info.get("chrome")):
                     continue
                 # 检查能否添加当前种子，判断是否超过保种体积大小
                 if not self.__is_allow_new_torrent(taskinfo=taskinfo,
@@ -665,7 +667,8 @@ class BrushTask(object):
                          siteid,
                          cookie,
                          ua,
-                         proxy):
+                         proxy,
+                         render = False):
         """
         检查种子是否符合刷流过滤条件
         :param rss_rule: 过滤条件字典
@@ -717,7 +720,8 @@ class BrushTask(object):
             torrent_attr = self.siteconf.check_torrent_attr(torrent_url=torrent_url,
                                                             cookie=cookie,
                                                             ua=ua,
-                                                            proxy=proxy)
+                                                            proxy=proxy,
+                                                            render=render)
             torrent_peer_count = torrent_attr.get("peer_count")
             log.debug("【Brush】%s 解析详情, %s" % (title, torrent_attr))
 
@@ -947,6 +951,7 @@ class BrushTask(object):
         停止服务
         """
         try:
+            ChromeDriverPool().flush()
             if self._scheduler:
                 self._scheduler.remove_all_jobs()
                 if self._scheduler.running:
@@ -960,6 +965,7 @@ class BrushTask(object):
         新增刷种任务
         """
         ret = self.dbhelper.update_brushtask(brushtask_id, item)
+        ChromeDriverPool().flush()
         self.init_config()
         return ret
 
@@ -968,6 +974,7 @@ class BrushTask(object):
         删除刷种任务
         """
         ret = self.dbhelper.delete_brushtask(brushtask_id)
+        ChromeDriverPool().flush()
         self.init_config()
         return ret
 

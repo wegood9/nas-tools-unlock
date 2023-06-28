@@ -11,6 +11,43 @@ from app.utils import ExceptionUtils, StringUtils
 from app.utils.types import DownloaderType
 from app.downloader.client._base import _IDownloadClient
 
+def retry_with_exceptions(max_retry=5, retry_delay=1):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for _ in range(max_retry):
+                try:
+                    return func(*args, **kwargs)
+                except (transmission_rpc.error.TransmissionAuthError) as err:
+                    ExceptionUtils.exception_traceback(err)
+                    return False
+                except (transmission_rpc.error.TransmissionError) as err:
+                    ExceptionUtils.exception_traceback(err)
+                    time.sleep(retry_delay)
+                except Exception as err:
+                    ExceptionUtils.exception_traceback(err)
+                    return False
+            return False
+        return wrapper
+    return decorator
+
+def retry_with_exceptions_none(max_retry=5, retry_delay=1):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            for _ in range(max_retry):
+                try:
+                    return func(*args, **kwargs)
+                except (transmission_rpc.error.TransmissionAuthError) as err:
+                    ExceptionUtils.exception_traceback(err)
+                    return None
+                except (transmission_rpc.error.TransmissionError) as err:
+                    ExceptionUtils.exception_traceback(err)
+                    time.sleep(retry_delay)
+                except Exception as err:
+                    ExceptionUtils.exception_traceback(err)
+                    return None
+            return None
+        return wrapper
+    return decorator
 
 class Transmission(_IDownloadClient):
     # 下载器ID
@@ -141,6 +178,7 @@ class Transmission(_IDownloadClient):
                 ret_torrents.append(torrent)
         return ret_torrents, False
 
+    @retry_with_exceptions_none()
     def get_completed_torrents(self, ids=None, tag=None):
         """
         获取已完成的种子列表
@@ -148,13 +186,10 @@ class Transmission(_IDownloadClient):
         """
         if not self.trc:
             return None
-        try:
-            torrents, error = self.get_torrents(status=["seeding", "seed_pending"], ids=ids, tag=tag)
-            return None if error else torrents or []
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
-            return None
+        torrents, error = self.get_torrents(status=["seeding", "seed_pending"], ids=ids, tag=tag)
+        return None if error else torrents or []
 
+    @retry_with_exceptions_none()
     def get_downloading_torrents(self, ids=None, tag=None):
         """
         获取正在下载的种子列表
@@ -162,15 +197,12 @@ class Transmission(_IDownloadClient):
         """
         if not self.trc:
             return None
-        try:
-            torrents, error = self.get_torrents(ids=ids,
-                                                status=["downloading", "download_pending"],
-                                                tag=tag)
-            return None if error else torrents or []
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
-            return None
+        torrents, error = self.get_torrents(ids=ids,
+                                            status=["downloading", "download_pending"],
+                                            tag=tag)
+        return None if error else torrents or []
 
+    @retry_with_exceptions_none()
     def set_torrents_status(self, ids, tags=None):
         """
         设置种子为已整理状态
@@ -187,12 +219,10 @@ class Transmission(_IDownloadClient):
         else:
             tags = ["已整理"]
         # 打标签
-        try:
-            self.trc.change_torrent(labels=tags, ids=ids)
-            log.info(f"【{self.client_name}】{self.name} 设置种子标签成功")
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
+        self.trc.change_torrent(labels=tags, ids=ids)
+        log.info(f"【{self.client_name}】{self.name} 设置种子标签成功")
 
+    @retry_with_exceptions_none()
     def set_torrent_tag(self, tid, tag):
         """
         设置种子标签
@@ -200,11 +230,9 @@ class Transmission(_IDownloadClient):
         if not tid or not tag:
             return
         ids = self.__parse_ids(tid)
-        try:
-            self.trc.change_torrent(labels=tag, ids=ids)
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
+        self.trc.change_torrent(labels=tag, ids=ids)
 
+    @retry_with_exceptions_none()
     def change_torrent(self,
                        tid,
                        tag=None,
@@ -257,19 +285,16 @@ class Transmission(_IDownloadClient):
         else:
             seedIdleMode = 2
             seedIdleLimit = 0
-        try:
-            self.trc.change_torrent(ids=ids,
-                                    labels=labels,
-                                    uploadLimited=uploadLimited,
-                                    uploadLimit=uploadLimit,
-                                    downloadLimited=downloadLimited,
-                                    downloadLimit=downloadLimit,
-                                    seedRatioMode=seedRatioMode,
-                                    seedRatioLimit=seedRatioLimit,
-                                    seedIdleMode=seedIdleMode,
-                                    seedIdleLimit=seedIdleLimit)
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
+        self.trc.change_torrent(ids=ids,
+                                labels=labels,
+                                uploadLimited=uploadLimited,
+                                uploadLimit=uploadLimit,
+                                downloadLimited=downloadLimited,
+                                downloadLimit=downloadLimit,
+                                seedRatioMode=seedRatioMode,
+                                seedRatioLimit=seedRatioLimit,
+                                seedIdleMode=seedIdleMode,
+                                seedIdleLimit=seedIdleLimit)
 
     def get_transfer_task(self, tag=None, match_path=None):
         """
@@ -385,6 +410,7 @@ class Transmission(_IDownloadClient):
             return remove_torrents_plus
         return remove_torrents
 
+    @retry_with_exceptions()
     def add_torrent(self, content,
                     is_paused=False,
                     download_dir=None,
@@ -392,69 +418,54 @@ class Transmission(_IDownloadClient):
                     download_limit=None,
                     cookie=None,
                     **kwargs):
-        try:
-            ret = self.trc.add_torrent(torrent=content,
-                                       download_dir=download_dir,
-                                       paused=is_paused,
-                                       cookies=cookie)
-            if ret and ret.hashString:
-                if upload_limit:
-                    self.set_uploadspeed_limit(ret.hashString, int(upload_limit))
-                if download_limit:
-                    self.set_downloadspeed_limit(ret.hashString, int(download_limit))
-            return ret
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
-            return False
+        ret = self.trc.add_torrent(torrent=content,
+                                   download_dir=download_dir,
+                                   paused=is_paused,
+                                   cookies=cookie)
+        if ret and ret.hashString:
+            if upload_limit:
+                self.set_uploadspeed_limit(ret.hashString, int(upload_limit))
+            if download_limit:
+                self.set_downloadspeed_limit(ret.hashString, int(download_limit))
+        return ret
 
+    @retry_with_exceptions()
     def start_torrents(self, ids):
         if not self.trc:
             return False
         ids = self.__parse_ids(ids)
-        try:
-            return self.trc.start_torrent(ids=ids)
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
-            return False
+        return self.trc.start_torrent(ids=ids)
 
+    @retry_with_exceptions()
     def stop_torrents(self, ids):
         if not self.trc:
             return False
         ids = self.__parse_ids(ids)
-        try:
-            return self.trc.stop_torrent(ids=ids)
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
-            return False
+        return self.trc.stop_torrent(ids=ids)
 
+    @retry_with_exceptions()
     def delete_torrents(self, delete_file, ids):
         if not self.trc:
             return False
         if not ids:
             return False
         ids = self.__parse_ids(ids)
-        try:
-            return self.trc.remove_torrent(delete_data=delete_file, ids=ids)
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
-            return False
+        return self.trc.remove_torrent(delete_data=delete_file, ids=ids)
 
+    @retry_with_exceptions_none()
     def get_files(self, tid):
         """
         获取种子文件列表
         """
         if not tid:
             return None
-        try:
-            torrent = self.trc.get_torrent(tid)
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
-            return None
+        torrent = self.trc.get_torrent(tid)
         if torrent:
             return torrent.files()
         else:
             return None
 
+    @retry_with_exceptions()
     def set_files(self, **kwargs):
         """
         设置下载文件的状态
@@ -471,12 +482,8 @@ class Transmission(_IDownloadClient):
         """
         if not kwargs.get("file_info"):
             return False
-        try:
-            self.trc.set_files(kwargs.get("file_info"))
-            return True
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
-            return False
+        self.trc.set_files(kwargs.get("file_info"))
+        return True
 
     def get_download_dirs(self):
         if not self.trc:
@@ -487,6 +494,7 @@ class Transmission(_IDownloadClient):
             ExceptionUtils.exception_traceback(err)
             return []
 
+    @retry_with_exceptions_none()
     def set_uploadspeed_limit(self, ids, limit):
         """
         设置上传限速，单位 KB/sec
@@ -498,6 +506,7 @@ class Transmission(_IDownloadClient):
         ids = self.__parse_ids(ids)
         self.trc.change_torrent(ids, uploadLimit=int(limit))
 
+    @retry_with_exceptions_none()
     def set_downloadspeed_limit(self, ids, limit):
         """
         设置下载限速，单位 KB/sec
@@ -541,6 +550,7 @@ class Transmission(_IDownloadClient):
             })
         return DispTorrents
 
+    @retry_with_exceptions_none()
     def set_speed_limit(self, download_limit=None, upload_limit=None):
         """
         设置速度限制
@@ -549,33 +559,28 @@ class Transmission(_IDownloadClient):
         """
         if not self.trc:
             return
-        try:
-            session = self.trc.get_session()
-            download_limit_enabled = True if download_limit else False
-            upload_limit_enabled = True if upload_limit else False
-            if download_limit_enabled == session.speed_limit_down_enabled and \
-                    upload_limit_enabled == session.speed_limit_up_enabled and \
-                    download_limit == session.speed_limit_down and \
-                    upload_limit == session.speed_limit_up:
-                return
-            self.trc.set_session(
-                speed_limit_down=download_limit if download_limit != session.speed_limit_down
-                else session.speed_limit_down,
-                speed_limit_up=upload_limit if upload_limit != session.speed_limit_up
-                else session.speed_limit_up,
-                speed_limit_down_enabled=download_limit_enabled,
-                speed_limit_up_enabled=upload_limit_enabled
-            )
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
-            return False
+        session = self.trc.get_session()
+        download_limit_enabled = True if download_limit else False
+        upload_limit_enabled = True if upload_limit else False
+        if download_limit_enabled == session.speed_limit_down_enabled and \
+                upload_limit_enabled == session.speed_limit_up_enabled and \
+                download_limit == session.speed_limit_down and \
+                upload_limit == session.speed_limit_up:
+            return
+        self.trc.set_session(
+            speed_limit_down=download_limit if download_limit != session.speed_limit_down
+            else session.speed_limit_down,
+            speed_limit_up=upload_limit if upload_limit != session.speed_limit_up
+            else session.speed_limit_up,
+            speed_limit_down_enabled=download_limit_enabled,
+            speed_limit_up_enabled=upload_limit_enabled
+        )
 
+    @retry_with_exceptions()
     def recheck_torrents(self, ids):
         if not self.trc:
             return False
         ids = self.__parse_ids(ids)
-        try:
-            return self.trc.verify_torrent(ids=ids)
-        except Exception as err:
-            ExceptionUtils.exception_traceback(err)
-            return False
+
+        return self.trc.verify_torrent(ids=ids)
+
