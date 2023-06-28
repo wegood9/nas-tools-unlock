@@ -1,5 +1,6 @@
 import json
-import os.path
+import signal
+import os
 import tempfile
 from functools import reduce
 from threading import Lock
@@ -41,7 +42,12 @@ class ChromeDriverPool:
         domain = urlparse(url).netloc
         
         if domain in self.driver_pool:
-            del self.driver_pool[domain]
+            self.driver_pool[domain].quit()
+            
+    def flush(self):
+        #import pdb;pdb.set_trace()
+        for driver in self.driver_pool.values():
+            driver.quit()
 
 class ChromeHelper(object):
     _executable_path = None
@@ -228,6 +234,7 @@ class ChromeHelper(object):
                 self._chrome.service.process.wait(3)
             # chrome 进程
             os.waitpid(self._chrome.browser_pid, 0)
+            os.kill(self._chrome.browser_pid, signal.SIGKILL)
         except Exception as e:
             print(str(e))
             pass

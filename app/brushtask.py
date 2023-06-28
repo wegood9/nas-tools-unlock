@@ -11,6 +11,7 @@ import log
 from app.downloader import Downloader
 from app.filter import Filter
 from app.helper import DbHelper, RssHelper
+from app.helper import ChromeDriverPool
 from app.media.meta import MetaInfo
 from app.message import Message
 from app.sites import Sites, SiteConf
@@ -950,6 +951,7 @@ class BrushTask(object):
         停止服务
         """
         try:
+            ChromeDriverPool().flush()
             if self._scheduler:
                 self._scheduler.remove_all_jobs()
                 if self._scheduler.running:
@@ -963,6 +965,7 @@ class BrushTask(object):
         新增刷种任务
         """
         ret = self.dbhelper.update_brushtask(brushtask_id, item)
+        ChromeDriverPool().flush()
         self.init_config()
         return ret
 
@@ -971,6 +974,7 @@ class BrushTask(object):
         删除刷种任务
         """
         ret = self.dbhelper.delete_brushtask(brushtask_id)
+        ChromeDriverPool().flush()
         self.init_config()
         return ret
 

@@ -605,6 +605,3 @@ class SiteConf:
                 res.encoding = res.apparent_encoding
                 return res.text
         return ""
-
-
-
