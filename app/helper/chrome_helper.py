@@ -155,7 +155,7 @@ class ChromeHelper(object):
                 self._chrome.get(url)
             return True
         # Catch the timeout exception as no error
-        except TimeoutException:
+        except TimeoutException as err:
             print(str(err))
             return True
         except Exception as err:
