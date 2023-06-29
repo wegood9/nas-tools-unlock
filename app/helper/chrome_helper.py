@@ -52,7 +52,6 @@ class ChromeDriverPool:
             self.driver_pool[domain].quit()
             
     def flush(self):
-        #import pdb;pdb.set_trace()
         for driver in self.driver_pool.values():
             driver.quit()
 

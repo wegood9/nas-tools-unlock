@@ -965,7 +965,6 @@ class BrushTask(object):
         新增刷种任务
         """
         ret = self.dbhelper.update_brushtask(brushtask_id, item)
-        ChromeDriverPool().flush()
         self.init_config()
         return ret
 
@@ -973,8 +972,12 @@ class BrushTask(object):
         """
         删除刷种任务
         """
+        task_del = self.dbhelper.get_brushtasks(brushtask_id)
+        site_info = self.sites.get_sites(siteid=task.SITE)
+        if site_info:
+            site_url = StringUtils.get_base_url(site_info.get("signurl") or site_info.get("rssurl"))
+            ChromeDriverPool().delete(site_url)
         ret = self.dbhelper.delete_brushtask(brushtask_id)
-        ChromeDriverPool().flush()
         self.init_config()
         return ret
 
