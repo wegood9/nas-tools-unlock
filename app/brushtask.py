@@ -53,6 +53,7 @@ class BrushTask(object):
         self.load_brushtasks()
         # 清理缓存
         self._torrents_cache = []
+        import pdb;pdb.set_trace()
         # 启动RSS任务
         if self._brush_tasks:
             self._scheduler = BackgroundScheduler(timezone=Config().get_timezone())
