@@ -6,7 +6,6 @@ from functools import lru_cache
 
 from lxml import etree
 
-from app.helper import ChromeHelper
 from app.helper import ChromeDriverPool
 from app.utils import ExceptionUtils, StringUtils, RequestUtils
 from app.utils.commons import singleton
@@ -274,6 +273,12 @@ class SiteConf:
             'HR': ["//b[contains(text(),'H&R:')]"],
             'PEER_COUNT': ["//div[@id='peercount']/b[1]"],
         },
+        'ptchdbits.co': {
+            'FREE': ["//h1[@id='top']/img[@class='pro_free']"],
+            '2XFREE': [],
+            'HR': ["//b[contains(text(),'H&R:')]"],
+            'PEER_COUNT': ["//div[@id='peercount']/b[1]"],
+        },
         'hdchina.org': {
             'RENDER': True,
             'FREE': ["//h2[@id='top']/img[@class='pro_free']"],
@@ -294,6 +299,12 @@ class SiteConf:
             'PEER_COUNT': [],
         },
         'www.hdarea.co': {
+            'FREE': ["//h1[@id='top']/b/font[@class='free']"],
+            '2XFREE': ["//h1[@id='top']/b/font[@class='twoupfree']"],
+            'HR': [],
+            'PEER_COUNT': ["//div[@id='peercount']/b[1]"],
+        },
+        'www.hdarea.club': {
             'FREE': ["//h1[@id='top']/b/font[@class='free']"],
             '2XFREE': ["//h1[@id='top']/b/font[@class='twoupfree']"],
             'HR': [],
@@ -582,7 +593,6 @@ class SiteConf:
                     ret_attr["peer_count"] = int(peer_count_digit_str) if len(peer_count_digit_str) > 0 else 0
         except Exception as err:
             ExceptionUtils.exception_traceback(err)
-        
         
         return ret_attr
 
