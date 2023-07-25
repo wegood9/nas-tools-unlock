@@ -274,6 +274,12 @@ class SiteConf:
             'HR': ["//b[contains(text(),'H&R:')]"],
             'PEER_COUNT': ["//div[@id='peercount']/b[1]"],
         },
+        'ptchdbits.co': {
+            'FREE': ["//h1[@id='top']/img[@class='pro_free']"],
+            '2XFREE': [],
+            'HR': ["//b[contains(text(),'H&R:')]"],
+            'PEER_COUNT': ["//div[@id='peercount']/b[1]"],
+        },
         'hdchina.org': {
             'RENDER': True,
             'FREE': ["//h2[@id='top']/img[@class='pro_free']"],
