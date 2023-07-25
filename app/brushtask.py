@@ -51,7 +51,6 @@ class BrushTask(object):
         self.stop_service()
         # 读取刷流任务列表
         self.load_brushtasks()
-        import pdb;pdb.set_trace()
         # 清理缓存
         self._torrents_cache = []
         # 启动RSS任务
