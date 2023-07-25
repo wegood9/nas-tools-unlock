@@ -973,7 +973,7 @@ class BrushTask(object):
         删除刷种任务
         """
         task_del = self.dbhelper.get_brushtasks(brushtask_id)
-        site_info = self.sites.get_sites(siteid=task.SITE)
+        site_info = self.sites.get_sites(siteid=task_del.SITE)
         if site_info:
             site_url = StringUtils.get_base_url(site_info.get("signurl") or site_info.get("rssurl"))
             ChromeDriverPool().delete(site_url)
