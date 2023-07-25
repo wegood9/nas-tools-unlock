@@ -512,11 +512,21 @@ class SiteConf:
         self.init_config()
 
     def init_config(self):
+        site_replacements = {
+            "chdbits.co": "ptchdbits.co",
+            "www.hdarea.co": "www.hdarea.club",
+            # 添加更多的网站替换映射关系
+        }
+        # print(self._RSS_SITE_GRAP_CONF)
         try:
             with open(os.path.join(Config().get_inner_config_path(),
                                    "sites.dat"),
                       "rb") as f:
                 self._RSS_SITE_GRAP_CONF = pickle.load(f).get("conf")
+            for k, v in site_replacements.items():
+                if k in self._RSS_SITE_GRAP_CONF:
+                    self._RSS_SITE_GRAP_CONF[v] = self._RSS_SITE_GRAP_CONF.get(k, {}).copy()
+                    print(v)
         except Exception as err:
             ExceptionUtils.exception_traceback(err)
 
