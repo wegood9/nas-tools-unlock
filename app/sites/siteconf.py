@@ -610,7 +610,7 @@ class SiteConf:
     @lru_cache(maxsize=128)
     def __get_site_page_html(url, cookie, ua, render=False, proxy=False):
         if render:
-            chrome = SiteConf().chrome_driver_pool.get_chrome_driver(url)
+            chrome = SiteConf().chrome_driver_pool.get_chrome_driver(url, proxy)
             if chrome.get_status() and chrome.visit(url=url, cookie=cookie, ua=ua, proxy=proxy, pool=True):
                 # 随机休眼后再返回
                 time.sleep(round(random.uniform(1, 5), 1))

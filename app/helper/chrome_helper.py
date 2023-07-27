@@ -31,7 +31,7 @@ class ChromeDriverPool:
     def __init__(self):
         self.driver_pool = {}
     
-    def get_chrome_driver(self, url):
+    def get_chrome_driver(self, url, proxy=False):
         domain = urlparse(url).netloc
         
         if domain in self.driver_pool:
@@ -39,7 +39,7 @@ class ChromeDriverPool:
         
         driver = ChromeHelper(headless=True)
         if driver.get_status():
-            driver.visit(url=url)
+            driver.visit(url=url, proxy=proxy)
         else:
             return None
         self.driver_pool[domain] = driver

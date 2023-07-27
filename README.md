@@ -40,6 +40,7 @@ NAS媒体库管理工具。
 
 已知bug：
 + 程序退出时浏览器不关闭
++ 修改刷流配置后再次启动Chromedriver时无法访问任何网页
 
 ## 安装
 ### 1、Docker (**Deprecated**)
