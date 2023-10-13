@@ -1,9 +1,11 @@
 import re
+import os
 import sys
 import time
 from datetime import datetime
 
 import pytz
+import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -222,6 +224,9 @@ class BrushTask(object):
             downloading_count = self.__get_downloading_count(downloader_id) or 0
             new_torrent_count = int(max_dlcount) - int(downloading_count)
 
+        # 自建RSS
+        custom_rss_server = os.environ.get("CUSTOM_RSS")
+        
         for res in rss_result:
             try:
                 # 种子名
@@ -252,6 +257,22 @@ class BrushTask(object):
                                              ua=ua,
                                              proxy=site_proxy,
                                              render=site_info.get("chrome")):
+                    continue
+                # 自建 RSS 设置
+                if custom_rss_server is not None:
+                    data = {
+                        'title': res.get('title'),
+                        'enclosure': res.get('enclosure'),
+                        'size': res.get('size'),
+                        'description': res.get('description'),
+                        'link': res.get('link'),
+                        'pubdate': res.get('pubdate')
+                    }
+                    response = requests.post(custom_rss_server, json=data)
+                    if response.status_code == 200:
+                        log.debug("【Brush】%s 符合条件，发送至自建 RSS..." % torrent_name)
+                    else:
+                        log.debug("【Brush】%s 发送至自建 RSS 失败" % torrent_name)
                     continue
                 # 检查能否添加当前种子，判断是否超过保种体积大小
                 if not self.__is_allow_new_torrent(taskinfo=taskinfo,
