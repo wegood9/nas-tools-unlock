@@ -95,12 +95,12 @@ jobs:
           pwd
           ls -all
           pyinstaller nas-tools.spec
-          mv /home/runner/work/nas-tools-unlock/nas-tools-unlock/nas-tools-unlock/package/dist/nas-tools /home/runner/work/nas-tools-unlock/nas-tools-unlock/nas-tools-unlock/package/dist/nas-tools-unlock.linux.amd64
-          ls -all /home/runner/work/nas-tools-unlock/nas-tools-unlock/nas-tools-unlock/package/dist
+          mv /home/runner/work/nas-tools-unlock/nas-tools-unlock/package/dist/nas-tools /home/runner/work/nas-tools-unlock/nas-tools-unlock/package/dist/nas-tools-unlock.linux.amd64
+          ls -all /home/runner/work/nas-tools-unlock/nas-tools-unlock/package/dist
         shell: pwsh
 
       - name: Upload linux file
         uses: actions/upload-artifact@v3
         with:
           name: linux-amd64
-          path: /home/runner/work/nas-tools-unlock/nas-tools-unlock/nas-tools-unlock/package/dist/nas-tools-unlock.linux.amd64
+          path: /home/runner/work/nas-tools-unlock/nas-tools-unlock/package/dist/nas-tools-unlock.linux.amd64

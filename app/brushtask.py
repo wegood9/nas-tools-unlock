@@ -55,7 +55,6 @@ class BrushTask(object):
         self.load_brushtasks()
         # 清理缓存
         self._torrents_cache = []
-        import pdb;pdb.set_trace()
         # 启动RSS任务
         if self._brush_tasks:
             self._scheduler = BackgroundScheduler(timezone=Config().get_timezone())
@@ -266,13 +265,14 @@ class BrushTask(object):
                         'size': res.get('size'),
                         'description': res.get('description'),
                         'link': res.get('link'),
-                        'pubdate': res.get('pubdate')
+			'guid': res.get('guid'),
+                        'pubdate': res.get('pubdate').strftime("%Y-%m-%dT%H:%M:%S%z")
                     }
                     response = requests.post(custom_rss_server, json=data)
                     if response.status_code == 200:
                         log.debug("【Brush】%s 符合条件，发送至自建 RSS..." % torrent_name)
                     else:
-                        log.debug("【Brush】%s 发送至自建 RSS 失败" % torrent_name)
+                        log.debug("【Brush】%s 发送至自建 RSS 失败：%s" % (torrent_name, r.text))
                     continue
                 # 检查能否添加当前种子，判断是否超过保种体积大小
                 if not self.__is_allow_new_torrent(taskinfo=taskinfo,
