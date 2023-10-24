@@ -1,6 +1,7 @@
 import json
 import signal
 import os
+import psutil
 import tempfile
 from functools import reduce
 from threading import Lock
@@ -19,12 +20,18 @@ lock = Lock()
 
 driver_executable_path = None
 
+def killprocess(pid):
+    childlist = psutil.Process(pid).children(recursive=True)
+    for i in childlist:
+        i.kill()
+    psutil.Process(pid).kill()
+
 @singleton
 class ChromeDriverPool:
     def __init__(self):
         self.driver_pool = {}
     
-    def get_chrome_driver(self, url):
+    def get_chrome_driver(self, url, proxy=False):
         domain = urlparse(url).netloc
         
         if domain in self.driver_pool:
@@ -32,7 +39,7 @@ class ChromeDriverPool:
         
         driver = ChromeHelper(headless=True)
         if driver.get_status():
-            driver.visit(url=url)
+            driver.visit(url=url, proxy=proxy)
         else:
             return None
         self.driver_pool[domain] = driver
@@ -45,7 +52,6 @@ class ChromeDriverPool:
             self.driver_pool[domain].quit()
             
     def flush(self):
-        #import pdb;pdb.set_trace()
         for driver in self.driver_pool.values():
             driver.quit()
 
@@ -148,7 +154,7 @@ class ChromeHelper(object):
                 self._chrome.get(url)
             return True
         # Catch the timeout exception as no error
-        except TimeoutException:
+        except TimeoutException as err:
             print(str(err))
             return True
         except Exception as err:
@@ -235,7 +241,7 @@ class ChromeHelper(object):
                 self._chrome.service.process.wait(3)
             # chrome 进程
             os.waitpid(self._chrome.browser_pid, 0)
-            os.kill(self._chrome.browser_pid, signal.SIGKILL)
+            killprocess(self._chrome.browser_pid)
         except Exception as e:
             print(str(e))
             pass

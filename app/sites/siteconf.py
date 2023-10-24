@@ -6,7 +6,6 @@ from functools import lru_cache
 
 from lxml import etree
 
-from app.helper import ChromeHelper
 from app.helper import ChromeDriverPool
 from app.utils import ExceptionUtils, StringUtils, RequestUtils
 from app.utils.commons import singleton
@@ -305,6 +304,12 @@ class SiteConf:
             'HR': [],
             'PEER_COUNT': ["//div[@id='peercount']/b[1]"],
         },
+        'www.hdarea.club': {
+            'FREE': ["//h1[@id='top']/b/font[@class='free']"],
+            '2XFREE': ["//h1[@id='top']/b/font[@class='twoupfree']"],
+            'HR': [],
+            'PEER_COUNT': ["//div[@id='peercount']/b[1]"],
+        },
         'hdatmos.club': {
             'FREE': ["//h1[@id='top']/b/font[@class='free']"],
             '2XFREE': ["//h1[@id='top']/b/font[@class='twoupfree']"],
@@ -507,11 +512,21 @@ class SiteConf:
         self.init_config()
 
     def init_config(self):
+        site_replacements = {
+            "chdbits.co": "ptchdbits.co",
+            "www.hdarea.co": "www.hdarea.club",
+            # 添加更多的网站替换映射关系
+        }
+        # print(self._RSS_SITE_GRAP_CONF)
         try:
             with open(os.path.join(Config().get_inner_config_path(),
                                    "sites.dat"),
                       "rb") as f:
                 self._RSS_SITE_GRAP_CONF = pickle.load(f).get("conf")
+            for k, v in site_replacements.items():
+                if k in self._RSS_SITE_GRAP_CONF:
+                    self._RSS_SITE_GRAP_CONF[v] = self._RSS_SITE_GRAP_CONF.get(k, {}).copy()
+                    print(v)
         except Exception as err:
             ExceptionUtils.exception_traceback(err)
 
@@ -589,14 +604,13 @@ class SiteConf:
         except Exception as err:
             ExceptionUtils.exception_traceback(err)
         
-        
         return ret_attr
 
     @staticmethod
     @lru_cache(maxsize=128)
     def __get_site_page_html(url, cookie, ua, render=False, proxy=False):
         if render:
-            chrome = SiteConf().chrome_driver_pool.get_chrome_driver(url)
+            chrome = SiteConf().chrome_driver_pool.get_chrome_driver(url, proxy)
             if chrome.get_status() and chrome.visit(url=url, cookie=cookie, ua=ua, proxy=proxy, pool=True):
                 # 随机休眼后再返回
                 time.sleep(round(random.uniform(1, 5), 1))
