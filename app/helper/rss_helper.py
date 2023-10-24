@@ -78,12 +78,17 @@ class RssHelper:
                         if pubdate:
                             # 转换为时间
                             pubdate = StringUtils.get_time_stamp(pubdate)
+                        # HASH / guid
+                        guid = DomUtils.tag_value(item, "guid", "_", default="")
+                        if not guid:
+                            guid = DomUtils.tag_value(item, "guid", default="")
                         # 返回对象
                         tmp_dict = {'title': title,
                                     'enclosure': enclosure,
                                     'size': size,
                                     'description': description,
                                     'link': link,
+                                    'guid': guid,
                                     'pubdate': pubdate}
                         ret_array.append(tmp_dict)
                     except Exception as e1:
