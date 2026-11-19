@@ -280,6 +280,13 @@ class SiteConf:
             'HR': [],
             'PEER_COUNT': ["//div[@id='peercount']/b[1]"]
         },
+        'hdwing.org': {
+            'RENDER': True,
+            'FREE': ["//h2[@id='top']/img[@class='pro_free']"],
+            '2XFREE': ["//h2[@id='top']/img[@class='pro_free2up']"],
+            'HR': [],
+            'PEER_COUNT': ["//div[@id='peercount']/b[1]"]
+        },
         'ccfbits.org': {
             'FREE': ["//font[@color='red'][text()='本种子不计下载量，只计上传量!']"],
             '2XFREE': [],
@@ -540,6 +547,7 @@ class SiteConf:
         site_replacements = {
             "chdbits.co": "ptchdbits.co",
             "www.hdarea.co": "www.hdarea.club",
+            "hdchina.org": "hdwing.org",
             # 添加更多的网站替换映射关系
         }
         # print(self._RSS_SITE_GRAP_CONF)
